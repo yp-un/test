@@ -9,18 +9,20 @@ flowchart TB
     subgraph BE_RUNTIME[Backend Runtime]
         CR[Google Cloud Run<br/>Spring Boot<br/>api.shthing.shop]
 
-        subgraph APP[Spring Boot Application]
+        subgraph APP[Application]
             SEC[Spring Security Filter Chain]
             JWT[JWT 인증 / 인가]
-            CTRL[Controller / Service]
-            SIGN[Presigned URL 발급]
+            CTRL[Controller]
+            SVC[Service]
+            REPO[Repository]
+            SIGN[Presigned URL 발급 로직]
         end
     end
 
     subgraph DATA[Data & Storage]
         DB[(Neon PostgreSQL)]
-        R2[Cloudflare R2<br/>Object Storage]
-        CDN[Cloudflare CDN<br/>cdn.shthing.shop]
+        R2[Cloudflare R2]
+        CDN[cdn.shthing.shop]
     end
 
     subgraph FE_CICD[Frontend CI/CD]
@@ -42,14 +44,17 @@ flowchart TB
     %% Runtime
     U -->|HTTPS| FE
     FE -->|HTTPS API 요청| CR
+
     CR --> SEC
     SEC --> JWT
     JWT --> CTRL
-    CTRL -->|비즈니스 데이터 조회/저장| DB
+    CTRL --> SVC
+    SVC --> REPO
+    REPO --> DB
 
     %% Upload flow
     FE -->|업로드용 Presigned URL 요청| CR
-    CTRL --> SIGN
+    SVC --> SIGN
     SIGN -->|업로드 정책 기반 URL 생성| R2
     CR -->|Presigned URL 응답| FE
     FE -->|이미지 직접 업로드| R2
